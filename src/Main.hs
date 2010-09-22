@@ -1,4 +1,18 @@
-module Main where
+module Main (main) where
 
-main :: IO ()
-main = undefined
+import Confluence.Decompose.Persistence
+import Framework.Explain
+
+import Data.Termlib.TRS.TPDB
+
+import System.Environment
+import Control.Monad
+
+main = do
+    [f] <- getArgs
+    c <- readFile f
+    trs <- either error return $ readTPDB c
+    let dec = decompose trs
+        ds = result dec
+        ex = explanation dec
+    putStrLn $ render ex

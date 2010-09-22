@@ -13,6 +13,7 @@ Executable tool
     Main-is:        Main.hs
 
     Build-Depends:
+        process >= 1.0 && < 1.1,
         array >= 0.3 && < 0.4,
         containers >= 0.3 && < 0.4,
         mtl >= 1.1 && < 1.2,

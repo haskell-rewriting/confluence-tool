@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Confluence.Decompose.Persistence
+import Termination.TTT2
 import Framework.Explain
 
 import Data.Termlib.TRS.TPDB
@@ -16,3 +17,4 @@ main = do
         ds = result dec
         ex = explanation dec
     putStrLn $ render ex
+    ttt2 trs >>= putStrLn . ("TTT2 says, " ++) . show

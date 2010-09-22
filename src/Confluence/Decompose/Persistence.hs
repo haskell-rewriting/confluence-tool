@@ -5,9 +5,10 @@ module Confluence.Decompose.Persistence (
 
 import Framework.Explain
 import Util.Pretty
-import Confluence.Type
+import Confluence.Types
 
 import Data.Termlib.TRS
+import Data.Termlib.Rule
 import Data.Termlib.Term hiding (pretty)
 
 import qualified Data.Set as S

@@ -1,4 +1,4 @@
-module Confluence.Type (
+module Confluence.Types (
     Problem,
 ) where
 

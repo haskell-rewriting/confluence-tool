@@ -5,14 +5,19 @@ Author:        Bertram Felgenhauer
 
 Build-Type:    Simple
 Cabal-Version: >= 1.4
--- License: LGPL
--- License-File: COPYING.LESSER
+License:       MIT
+License-File:  LICENSE
 
 Executable tool
     Hs-Source-Dirs: src
     Main-is:        Main.hs
 
     Build-Depends:
+        array >= 0.3 && < 0.4,
+        containers >= 0.3 && < 0.4,
+        mtl >= 1.1 && < 1.2,
+        pretty >= 1.0 && < 1.1,
+        xtermlib >= 0.0 && < 0.1,
         base >= 4 && < 5
 
     Extensions:

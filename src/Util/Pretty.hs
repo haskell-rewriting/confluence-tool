@@ -24,6 +24,10 @@ instance Pretty a => Pretty [a] where
     pretty = prettyList
     prettyList = vList
 
+instance (Pretty a, Pretty b) => Pretty (Either a b) where
+    pretty (Left a) = pretty a <> "l"
+    pretty (Right b) = pretty b <> "r"
+
 instance (Pretty a, Pretty b) => Pretty (a, b) where
     pretty (a, b) = "(" <> pretty a <> "," <+> pretty b <> ")"
 

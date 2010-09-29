@@ -21,6 +21,10 @@ import Control.Arrow ((***))
 import Control.Monad
 import Text.PrettyPrint.HughesPJ ((<+>), hcat, punctuate)
 
+-- use unordered sorts.
+unordered :: Bool
+unordered = True
+
 decompose :: (Pretty f, Pretty v, Ord f, Ord v) =>
     Problem f v -> Explain [Problem f v]
 decompose trs = section "Find persistent decomposition for the TRS" $ do
@@ -79,7 +83,8 @@ constraints :: Ord f => TRS f Int -> (Graph, M.Map (Node f) Vertex)
 constraints trs =
     let fs = S.unions $ map funs $ trs >>= \r -> [lhs r, rhs r]
 
-        root = [(top lhs, top rhs) | lhs :--> rhs <- trs]
+        root = [(top lhs, top rhs) | lhs :--> rhs <- trs] ++
+               [(top rhs, top lhs) | unordered, lhs :--> rhs <- trs]
         internal = trs >>= \(lhs :--> rhs) -> int True lhs ++ int False rhs
         subterm = [(NRes f, n) | f <- S.toList fs,
                    n <- takeWhile (`S.member` nodes) $ map (NArg f) [0..]]
@@ -93,8 +98,8 @@ constraints trs =
 int :: Bool -> Term f Int -> [(Node f, Node f)]
 int strict (Var v) = []
 int strict (App f as) = concat $ zipWith (go f) [0..] as where
-    go f i (Var v) = [(NArg f i, NVar v)] ++ [(NVar v, NArg f i) | strict]
-    go f i t = [(NArg f i, top t)] ++ int strict t
+    go f i (Var v) = [(NArg f i, NVar v)] ++ [(NVar v, NArg f i) | strict || unordered]
+    go f i t = [(NArg f i, top t)] ++ [(top t, NArg f i) | unordered] ++ int strict t
 
 top :: Term f Int -> Node f
 top (Var v)   = NVar v

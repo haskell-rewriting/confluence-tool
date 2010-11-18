@@ -29,17 +29,21 @@ confluent trs = section "Huet-Toyama-van-Oostrom (development closed)" $ do
 
 processInner trs [] = return Yes
 processInner trs (c:cs) = do
-    tell $ "Considering the inner critical pair" <+> pretty (cpLeft c) <+> "><" <+> pretty (cpRight c)
+    tell $ "Considering the inner critical pair"
+    tell $ nest 4 $ vcat [
+              pretty (cpTop c),
+              " =>" <+> pretty (cpLeft c),
+              " ><" <+> pretty (cpRight c)]
     let l = development trs (cpLeft c)
         r = [T.fromTerm (cpRight c)]
     if null (T.toList $ T.simplify $ T.intersect l r) then do
         tell "not joinable."
         return Maybe
      else do
-        tell "l"
-        tell $ nest 4 $ vcat $ map pretty (T.toList l)
-        tell "r"
-        tell $ nest 4 $ vcat $ map pretty (T.toList r)
+        -- tell "l"
+        -- tell $ nest 4 $ vcat $ map pretty (T.toList l)
+        -- tell "r"
+        -- tell $ nest 4 $ vcat $ map pretty (T.toList r)
         tell "l & r"
         tell $ nest 4 $ vcat $ map pretty (T.toList $ T.intersect l r)
         tell "joinable in a development step."
@@ -47,13 +51,19 @@ processInner trs (c:cs) = do
 
 processOuter trs [] = return Yes
 processOuter trs (c:cs) = do
-    tell $ "Considering the outer critical pair" <+> pretty (cpLeft c) <+> "><" <+> pretty (cpRight c)
+    tell $ "Considering the outer critical pair"
+    tell $ nest 4 $ vcat [
+              pretty (cpTop c),
+              " =>" <+> pretty (cpLeft c),
+              " ><" <+> pretty (cpRight c)]
     let l = development trs (cpLeft c)
         r = development trs (cpRight c)
     if null (T.toList $ T.simplify $ T.intersect l r) then do
         tell "not joinable."
         return Maybe
      else do
+        tell "l & r"
+        tell $ nest 4 $ vcat $ map pretty (T.toList $ T.intersect l r)
         tell "joinable using development steps."
-        processInner trs cs
+        processOuter trs cs
 

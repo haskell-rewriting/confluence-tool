@@ -79,16 +79,3 @@ section doc t = Explain $ do
          runExplain' t
     put st{ cSection = s }
     return r
-
-{-
-instance MonadWriter Doc Explain where
-    tell = Explain . tell . VCat
-    listen = Explain . fmap (second unVCat) . listen . runExplain
-    pass = Explain . pass . fmap (second (\f -> VCat . f . unVCat)) . runExplain
-
-newtype VCat = VCat { unVCat :: Doc }
-
-instance Monoid VCat where
-    mempty = VCat (P.empty)
-    mappend a b = VCat $ unVCat a $+$ unVCat b
--}

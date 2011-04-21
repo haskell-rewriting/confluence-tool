@@ -1,70 +1,69 @@
 {-# LANGUAGE OverloadedStrings, TypeSynonymInstances #-}
 
 module Util.Pretty (
-    Pretty (..),
+    PPretty (..),
     hList,
     vList,
 ) where
 
-import Data.Termlib.TRS
-import Data.Termlib.Term hiding (pretty)
+import qualified Data.Rewriting.Rules as Rules
+import Data.Rewriting.Rule (Rule (..))
+import qualified Data.Rewriting.Term as Term
+import Data.Rewriting.Term (Term (..))
 
-import Text.PrettyPrint.HughesPJ
+import Text.PrettyPrint.ANSI.Leijen
 import GHC.Exts (IsString(..))
 
-instance IsString Doc where
-    fromString = text
+class PPretty a where
+    ppretty :: a -> Doc
+    pprettyList :: [a] -> Doc
+    pprettyList = hList
 
-class Pretty a where
-    pretty :: a -> Doc
-    prettyList :: [a] -> Doc
-    prettyList = hList
+instance PPretty a => PPretty [a] where
+    ppretty = pprettyList
+    pprettyList = vList
 
-instance Pretty a => Pretty [a] where
-    pretty = prettyList
-    prettyList = vList
+instance (PPretty a, PPretty b) => PPretty (Either a b) where
+    ppretty (Left a) = ppretty a <> "l"
+    ppretty (Right b) = ppretty b <> "r"
 
-instance (Pretty a, Pretty b) => Pretty (Either a b) where
-    pretty (Left a) = pretty a <> "l"
-    pretty (Right b) = pretty b <> "r"
+instance (PPretty a, PPretty b) => PPretty (a, b) where
+    ppretty (a, b) = "(" <> ppretty a <> "," <+> ppretty b <> ")"
 
-instance (Pretty a, Pretty b) => Pretty (a, b) where
-    pretty (a, b) = "(" <> pretty a <> "," <+> pretty b <> ")"
-
-instance (Pretty a, Pretty b, Pretty c) => Pretty (a, b, c) where
-    pretty (a, b, c) = "(" <> pretty a <> "," <+> pretty b <> "," <+> pretty c <> ")"
+instance (PPretty a, PPretty b, PPretty c) => PPretty (a, b, c) where
+    ppretty (a, b, c) = "(" <> ppretty a <> "," <+> ppretty b <> "," <+> ppretty c <> ")"
 
 newtype S a = S { unS :: a }
 
-instance Show a => Pretty (S a) where
-    pretty = text . show . unS
+instance Show a => PPretty (S a) where
+    ppretty = text . show . unS
 
-instance Pretty Integer where pretty = pretty . S
-instance Pretty Int where pretty = pretty . S
-instance Pretty Bool where pretty = pretty . S
+instance PPretty Integer where ppretty = ppretty . S
+instance PPretty Int where ppretty = ppretty . S
+instance PPretty Bool where ppretty = ppretty . S
 
-instance Pretty Char where
-    pretty = pretty . S
-    prettyList = text -- pretty . S
+instance PPretty Char where
+    ppretty = ppretty . S
+    pprettyList = text -- ppretty . S
 
-instance (Pretty f, Pretty v) => Pretty (Rule f v) where
-    pretty (lhs :--> rhs) = fsep [pretty lhs, "-->", pretty rhs]
-    prettyList = vList
+instance (PPretty f, PPretty v) => PPretty (Rule f v) where
+    ppretty (Rule lhs rhs) = fillSep [ppretty lhs, "-->", ppretty rhs]
+    pprettyList = vList
 
-instance (Pretty f, Pretty v) => Pretty (Term f v) where
-    pretty (Var v) = "?" <> pretty v
-    pretty (App f []) = pretty f
-    pretty (App f as) = fcat [pretty f, "(", fsep . punctuate "," $ map pretty as, ")"]
+instance (PPretty f, PPretty v) => PPretty (Term f v) where
+    ppretty (Var v) = "?" <> ppretty v
+    ppretty (Fun f []) = ppretty f
+    ppretty (Fun f as) = fillCat [ppretty f, "(", fillSep . punctuate "," $ map ppretty as, ")"]
 
-hList :: Pretty a => [a] -> Doc
+hList :: PPretty a => [a] -> Doc
 hList [] = "[]"
 hList xs = hcat
     ["[",
-    fsep . punctuate "," . map pretty $ xs,
+    fillSep . punctuate "," . map ppretty $ xs,
     "]"]
 
-vList :: Pretty a => [a] -> Doc
+vList :: PPretty a => [a] -> Doc
 vList xs = vcat
     ["[",
-    nest 4 . vcat . punctuate "," . map pretty $ xs,
+    indent 4 . vcat . punctuate "," . map ppretty $ xs,
     "]"]

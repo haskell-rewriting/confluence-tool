@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Termination.TTT2 (
     ttt2,
 ) where
@@ -5,7 +6,11 @@ module Termination.TTT2 (
 import Termination.Types
 import Framework.Types
 
-import Data.Termlib.TRS.TPDB
+import qualified Data.Rewriting.Problem as P
+import qualified Data.Rewriting.Rules as Rs
+import qualified Data.Rewriting.Rule as R
+import Text.PrettyPrint.ANSI.Leijen
+import qualified Data.Set as S
 
 import System.Process
 import System.IO
@@ -21,8 +26,8 @@ ttt2 problem = do
        (createProcess cmd)
        (\(_, _, _, pid) -> terminateProcess pid) $
        \(Just stdin, Just stdout, _, _) -> do
-          putStrLn "Invoking TTT2"
-          putStrLn $ showTPDB problem
+          -- putStrLn "Invoking TTT2"
+          -- putStrLn $ showTPDB problem
           hPutStr stdin $ showTPDB problem
           hClose stdin
           hGetLine stdout
@@ -30,3 +35,11 @@ ttt2 problem = do
         "NO" -> return No
         "YES" -> return Yes
         "MAYBE" -> return Maybe
+
+showTPDB :: Problem -> String
+showTPDB problem = show $
+    let vars = S.toList $ S.fromList $ Rs.vars problem
+    in  "(VAR" <+> fillSep (map text vars) <> ")" <$>
+        "(RULES" <$>
+        indent 4 (vcat $ map (R.prettyRule "->" text text) problem) <$>
+        ")"

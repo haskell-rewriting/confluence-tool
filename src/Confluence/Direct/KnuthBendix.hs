@@ -4,10 +4,11 @@ module Confluence.Direct.KnuthBendix (
     confluent
 ) where
 
-import Text.PrettyPrint.HughesPJ
-import Data.Termlib.TRS
-import Data.Termlib.Term hiding (pretty)
-import Data.Termlib.Critical
+import Text.PrettyPrint.ANSI.Leijen
+import qualified Data.Rewriting.Rules as R
+import Data.Rewriting.Rule
+import Data.Rewriting.Term (Term (..))
+import Data.Rewriting.CriticalPair as C
 
 import Confluence.Types
 import Termination.TTT2
@@ -23,18 +24,18 @@ confluent trs = do
         Maybe -> no "possibly not terminating"
         Yes -> do
             tell "The TRS is terminating according to ttt2."
-            checkCPs trs (allCPs trs)
+            checkCPs trs (cps' trs)
 
 checkCPs trs [] = do
     tell "No critical pairs left."
     return Yes
 checkCPs trs (c:cs) = do
     tell $ "Considering the critical pair"
-    tell $ pretty (cpTop c)
-    tell $ pretty (cpLeft c)
-    tell $ pretty (cpRight c)
-    let l = nf trs (cpLeft c)
-        r = nf trs (cpRight c)
+    tell $ ppretty (C.top c)
+    tell $ ppretty (C.left c)
+    tell $ ppretty (C.right c)
+    let l = nf trs (C.left c)
+        r = nf trs (C.right c)
         cont _ = if l == r then do
             tell "Normal forms are equal."
             checkCPs trs cs
@@ -43,10 +44,10 @@ checkCPs trs (c:cs) = do
             return No
     maybe (tell "Could not find normal form." >> return Maybe) cont (l >> r)
 
-nf :: (Eq f, Eq v, Ord v') => TRS f v' -> Term f v -> Maybe (Term f v)
+nf :: (Eq f, Eq v, Ord v') => [Rule f v'] -> Term f v -> Maybe (Term f v)
 nf trs = go (10^6) where
     go 0 t = Nothing
-    go n t = case rewrites trs t of
+    go n t = case map R.result $ R.fullRewrite trs t of
         [] -> Just t
         (t' : ts) -> go (n-1) t'
 

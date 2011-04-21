@@ -2,6 +2,6 @@ module Termination.Types (
     Problem,
 ) where
 
-import Data.Termlib.TRS
+import Data.Rewriting.Rule
 
-type Problem = TRS String String
+type Problem = [Rule String String]

@@ -7,9 +7,12 @@ import Framework.Explain
 import Util.Pretty
 import Confluence.Types
 
-import Data.Termlib.TRS
-import Data.Termlib.Rule
-import Data.Termlib.Term hiding (pretty)
+import qualified Data.Rewriting.Rules as Rs
+import qualified Data.Rewriting.Rule as R
+import qualified Data.Rewriting.Term as T
+import Data.Rewriting.Rules ()
+import Data.Rewriting.Rule (Rule (..))
+import Data.Rewriting.Term (Term (..))
 
 import qualified Data.Set as S
 import qualified Data.Map as M
@@ -19,36 +22,36 @@ import Data.Tree
 import Data.Maybe
 import Control.Arrow ((***))
 import Control.Monad
-import Text.PrettyPrint.HughesPJ ((<+>), hcat, punctuate)
+import Text.PrettyPrint.ANSI.Leijen ((<+>), hcat, punctuate)
 
 -- use unordered sorts.
 unordered :: Bool
 unordered = True
 
-decompose :: (Pretty f, Pretty v, Ord f, Ord v) =>
+decompose :: (PPretty f, PPretty v, Ord f, Ord v) =>
     Problem f v -> Explain [Problem f v]
 decompose trs = section "Find persistent decomposition for the TRS" $ do
-    tell (pretty trs)
+    tell (ppretty trs)
     let trs' = relabel trs
     let (signature, order, attach) = attachment trs'
     section "Find most general sort attachment." $ do
-        tell $ "using order" <+> (pretty $ map Prec $ reverse $ edges order)
+        tell $ "using order" <+> (ppretty $ map Prec $ reverse $ edges order)
         tell $ "and types"
-        tell $ pretty signature
-    tell $ "The maximal sorts are" <+> pretty (sources order)
+        tell $ ppretty signature
+    tell $ "The maximal sorts are" <+> ppretty (sources order)
 
     section "Finding induced TRSs" $ do
         forM (sources order) $ \s -> do
             let sorts = S.fromList . flatten . head . dfs order $ [s]
                 trs'' = [r | (r', r) <- zip trs' trs, attach (top (lhs r')) `S.member` sorts]
-            section ("Sort" <+> pretty s <+> "induces the TRS") $ do
-                tell $ pretty trs''
+            section ("Sort" <+> ppretty s <+> "induces the TRS") $ do
+                tell $ ppretty trs''
             return trs''
 
 -- find most general ordered sort attachment for given TRS.
-attachment :: Ord f => TRS f Int -> ([Type f], Graph, Node f -> Vertex)
+attachment :: Ord f => [Rule f Int] -> ([Type f], Graph, Node f -> Vertex)
 attachment trs =
-    let fs = S.unions $ map funs $ trs >>= \r -> [lhs r, rhs r]
+    let fs = S.unions $ map (S.fromList . R.funs) trs
         (gr, fromNode) = constraints trs
         (gr', toSort) = compress gr
         toSort' = (fmap (toSort M.!) fromNode M.!)
@@ -56,20 +59,23 @@ attachment trs =
         getType f = Type f (map toSort' $ takeWhile (`M.member` fromNode) $ map (NArg f) [0..]) (toSort' (NRes f))
     in  (signature, gr', toSort')
 
-relabel :: (Ord f, Ord v) => TRS f v -> TRS f Int
+relabel :: (Ord f, Ord v) => [Rule f v] -> [Rule f Int]
 relabel trs = let
     -- translate function symbols to index
-    fs = S.unions $ map funs $ trs >>= \r -> [lhs r, rhs r]
-    fsm = M.fromList $ zip (S.toList fs) [0..]
+    -- fs = S.unions $ map (S.fromList . R.funs) trs
+    -- fsm = M.fromList $ zip (S.toList fs) [0..]
     -- translate variables to index, rule by rule
-    vss = map (\r -> vars (lhs r) `S.union` vars (rhs r)) trs
+    vss = map (S.fromList . R.vars) trs
     vis = scanl (+) 0 (map S.size vss)
     -- process a singe rule given variables, variable starting index and rule
     single vs i r = mapRule m r where
-        m = mapFV id {- (fsm M.!) -} (vsm M.!)
+        m = T.map (vsm M.!) id {- (fsm M.!) -}
         vsm = M.fromList $ zip (S.toList vs) [i..]
   in
     zipWith3 single vss vis trs
+
+mapRule :: (Term f v -> Term f' v') -> Rule f v -> Rule f' v'
+mapRule f (Rule lhs rhs) = Rule (f lhs) (f rhs)
 
 data Node f
     = NVar Int
@@ -79,13 +85,13 @@ data Node f
 
 -- build graph of contraints in the relabeled TRS.
 -- each edge a -> b corresponds the a contraint a >= b or b |> a.
-constraints :: Ord f => TRS f Int -> (Graph, M.Map (Node f) Vertex)
+constraints :: Ord f => [Rule f Int] -> (Graph, M.Map (Node f) Vertex)
 constraints trs =
-    let fs = S.unions $ map funs $ trs >>= \r -> [lhs r, rhs r]
+    let fs = S.unions $ map (S.fromList . R.funs) trs
 
-        root = [(top lhs, top rhs) | lhs :--> rhs <- trs] ++
-               [(top rhs, top lhs) | unordered, lhs :--> rhs <- trs]
-        internal = trs >>= \(lhs :--> rhs) -> int True lhs ++ int False rhs
+        root = [(top lhs, top rhs) | Rule lhs rhs <- trs] ++
+               [(top rhs, top lhs) | unordered, Rule lhs rhs <- trs]
+        internal = trs >>= \(Rule lhs rhs) -> int True lhs ++ int False rhs
         subterm = [(NRes f, n) | f <- S.toList fs,
                    n <- takeWhile (`S.member` nodes) $ map (NArg f) [0..]]
         constraints = root ++ internal ++ subterm
@@ -97,13 +103,13 @@ constraints trs =
 
 int :: Bool -> Term f Int -> [(Node f, Node f)]
 int strict (Var v) = []
-int strict (App f as) = concat $ zipWith (go f) [0..] as where
+int strict (Fun f as) = concat $ zipWith (go f) [0..] as where
     go f i (Var v) = [(NArg f i, NVar v)] ++ [(NVar v, NArg f i) | strict || unordered]
     go f i t = [(NArg f i, top t)] ++ [(top t, NArg f i) | unordered] ++ int strict t
 
 top :: Term f Int -> Node f
 top (Var v)   = NVar v
-top (App f _) = NRes f
+top (Fun f _) = NRes f
 
 -- Graph utilities
 
@@ -139,19 +145,19 @@ sinks gr = [v | v <- vertices gr, null (gr A.! v)]
 
 newtype Prec = Prec (Int, Int)
 
-instance Pretty Prec where
-   pretty (Prec (a, b)) = pretty a <+> ">" <+> pretty b
+instance PPretty Prec where
+   ppretty (Prec (a, b)) = ppretty a <+> ">" <+> ppretty b
 
 data Type f = Type f [Int] Int
 
-instance Pretty f => Pretty (Type f) where
-    pretty (Type f args res) =
-        pretty f <+> ":" <+> hcat (punctuate " x " $ map pretty args) <+> "->" <+> pretty res
-    prettyList = vList
+instance PPretty f => PPretty (Type f) where
+    ppretty (Type f args res) =
+        ppretty f <+> ":" <+> hcat (punctuate " x " $ map ppretty args) <+> "->" <+> ppretty res
+    pprettyList = vList
 
 {-
 import Debug.Trace
 
-showTRS :: (Show f, Show v) => TRS f v -> String
+showTRS :: (Show f, Show v) => [Rule f v] -> String
 showTRS = showTPDB . map (mapRule (mapFV (('f':) . show) (('v':) . show)))
 -}

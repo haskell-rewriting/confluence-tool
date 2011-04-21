@@ -7,23 +7,24 @@ import Termination.TTT2
 import Framework.Explain
 import Framework.Types
 
-import Data.Termlib.TRS.TPDB
+import qualified Data.Rewriting.Problem as P
 
+import Text.PrettyPrint.ANSI.Leijen
 import System.Environment
 import Control.Monad
 
 main = do
     [f] <- getArgs
-    c <- readFile f
-    trs <- either error return $ readTPDB c
+    p <- P.parseFileIO f
+    let trs = P.allRules (P.rules p)
     let dec = decompose trs
         ds = result dec
-    putStrLn $ render $ explanation dec
+    putDoc $ explanation dec
     foo <- K.confluent trs
-    putStrLn $ render $ explanation foo
+    putDoc $ explanation foo
     if result foo == Maybe then do
         let dc = H.confluent trs
-        putStrLn $ render $ explanation dc
+        putDoc $ explanation dc
         print $ result dc
      else do
         print $ result foo

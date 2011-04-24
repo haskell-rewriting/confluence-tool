@@ -69,7 +69,7 @@ relabel trs = let
     vis = scanl (+) 0 (map S.size vss)
     -- process a singe rule given variables, variable starting index and rule
     single vs i r = mapRule m r where
-        m = T.map (vsm M.!) id {- (fsm M.!) -}
+        m = T.map id (vsm M.!) {- (fsm M.!) -}
         vsm = M.fromList $ zip (S.toList vs) [i..]
   in
     zipWith3 single vss vis trs

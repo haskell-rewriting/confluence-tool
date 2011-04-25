@@ -37,7 +37,7 @@ newtype Explain a = Explain {
 
 instance MonadWriter Doc Explain where
     tell = Explain . tell . MDoc
-    listen = Explain . fmap (\(a, MDoc b) -> (a, b)) . listen . runExplain'
+    listen = Explain . fmap (\(a, b) -> (a, unMDoc b)) . listen . runExplain'
     pass = Explain . pass . fmap (\(a, f) -> (a, MDoc . f . unMDoc)) . runExplain'
 
 instance Monoid MDoc where

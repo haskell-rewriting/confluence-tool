@@ -37,7 +37,7 @@ processInner trs (c:cs) = do
     let l = development trs (C.left c)
         r = [D.fromTerm (C.right c)]
     if null (D.toList $ D.simplify $ D.intersect l r) then do
-        tell "not joinable."
+        tell "not joinable in a development step."
         return Maybe
      else do
         -- tell "l"
@@ -59,7 +59,7 @@ processOuter trs (c:cs) = do
     let l = development trs (C.left c)
         r = development trs (C.right c)
     if null (D.toList $ D.simplify $ D.intersect l r) then do
-        tell "not joinable."
+        tell "not joinable in a pair of development steps."
         return Maybe
      else do
         tell "l & r"

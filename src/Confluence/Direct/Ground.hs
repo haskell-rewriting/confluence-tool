@@ -53,15 +53,16 @@ confluent' trs = do
         [] -> do
             tell "C-Conditions satisfied."
             let ndjs = ndj trs3 joins stabilizables
-            case filter (\s -> (s, s) `R.member` ndjs) (map fst $ R.toList trs3) of
-                s:_ -> do
+            case filter (\(s, _) -> (s, s) `R.member` ndjs) (R.toList trs3) of
+                (s, _):_ -> do
                     tell $ "Side not deeply joinable with itself:" <+> ppretty s
                     return No
                 [] -> do
                     tell $ "All sides deeply joinable with themselves."
                     return Yes
 
-mapRule :: (Term.Term f v -> Term.Term f' v') -> Rule.Rule f v -> Rule.Rule f' v'
+mapRule :: (Term.Term f v -> Term.Term f' v') ->
+    Rule.Rule f v -> Rule.Rule f' v'
 mapRule f (Rule.Rule l r) = Rule.Rule (f l) (f r)
 
 data Con f  = F f Int | C Int deriving (Eq, Ord, Show)
@@ -124,7 +125,7 @@ ffc trs =
     in  foldl add (R.fromList [(a, a) | a <- S.toList sides]) trs
 
 -- joinability closure
-joinc :: Ord f => R.Rel (Side f) -> R.Rel (Side f)
+joinc :: (Ord f, PPretty f) => R.Rel (Side f) -> R.Rel (Side f)
 joinc trs =
     let sides = S.fromList [x | (l, r) <- R.toList trs, x <- [l, r]]
         add rel (l, r) | (l, r) `R.member` rel = rel
@@ -143,8 +144,10 @@ joinc trs =
                     (Con gl, Con gr) <- R.toList $ R.restrict isCon rel']
                 right = [(App gl fl, App gr fr) |
                     (Con gl, Con gr) <- R.toList $ R.restrict isCon rel']
-            in  foldl add rel' (S.toList todo)
-    in  foldl add R.empty [(a, a) | a <- S.toList sides]
+            in  -- (\res -> traceShow (ppretty (l, r) <$> vList (S.toList todo)) res) $
+                foldl add rel' (S.toList todo)
+    in  -- (\res -> traceShow ("joinc" <$> vList (S.toList sides)) res) $
+        foldl add R.empty [(a, a) | a <- S.toList sides]
 
 -- (top-)stabilizable terms
 stabilizable :: Ord f => R.Rel (Side f) -> S.Set (Side f)
@@ -182,12 +185,13 @@ topsteps trs stabilizables s =
         right = [App' l r | App' l r <- tops, r `S.member` stabilizables]
     in  (tops, left, right)
 
-joinable :: (Ord f) =>
+joinable :: (Ord f, PPretty f) =>
     R.Rel (Side f) -> R.Rel (Side f) -> Tops f -> Tops f -> Bool
 joinable trs joins s t =
---    (\res -> traceShow ("joinable" <+> ppretty s <+> ppretty t <+> text (show res) <$> ppretty s' <$> ppretty t' <$> ppretty s'' <$> ppretty t'') res) $
+    -- (\res -> traceShow ("joinable" <+> ppretty s <+> ppretty t <+> text (show res) <$> ppretty s' <$> ppretty t' <$> ppretty s'' <$> ppretty t'') res) $
     any (`R.member` joins) (liftM2 (,) s' t') ||
-    any (\((sl, sr), (tl, tr)) -> (sl, tl) `R.member` joins && (sr, tr) `R.member` joins) (liftM2 (,) s'' t'')
+    any (\((sl, sr), (tl, tr)) -> (sl, tl) `R.member` joins &&
+         (sr, tr) `R.member` joins) (liftM2 (,) s'' t'')
   where
     succ' = S.toList . R.succ trs
     s' = case s of
@@ -206,7 +210,8 @@ joinable trs joins s t =
 reachable :: Ord f => R.Rel (Side f) -> Tops f -> Tops f -> Bool
 reachable trs s t =
     any (`R.member` trs) (liftM2 (,) s' t') ||
-    any (\((sl, sr), (tl, tr)) -> (sl, tl) `R.member` trs && (sr, tr) `R.member` trs) (liftM2 (,) s'' t'')
+    any (\((sl, sr), (tl, tr)) -> (sl, tl) `R.member` trs &&
+         (sr, tr) `R.member` trs) (liftM2 (,) s'' t'')
   where
     succ' = S.toList . R.succ trs
     pred' = S.toList . R.pred trs
@@ -224,7 +229,7 @@ reachable trs s t =
         App' l r -> [(l, r)]
 
 -- Definition 18
-cconds :: Ord f =>
+cconds :: (Ord f, PPretty f) =>
     R.Rel (Side f) -> R.Rel (Side f) -> S.Set (Side f) -> Side f -> Bool
 cconds trs joins stabilizables s =
     let (tops, left, right) = topsteps trs stabilizables s
@@ -251,7 +256,7 @@ cconds trs joins stabilizables s =
             and [or [rightp (App' l r') | r' <- succ' r] | App' l r <- left])
 
 -- Definition 24
-djconds :: Ord f => R.Rel (Side f) -> R.Rel (Side f) ->
+djconds :: (Ord f, PPretty f) => R.Rel (Side f) -> R.Rel (Side f) ->
     S.Set (Side f) -> Side f -> Side f -> Bool
 djconds trs joins stabilizables s t =
     let (topss, lefts, rights) = topsteps trs stabilizables s
@@ -268,11 +273,11 @@ djconds trs joins stabilizables s t =
             [(a, b) | (App' a _) <- rights, (App' b _) <- rightt]
 
 -- "not deeply joinable"
-ndj :: Ord f =>
+ndj :: (Ord f, PPretty f) =>
     R.Rel (Side f) -> R.Rel (Side f) -> S.Set (Side f) -> R.Rel (Side f)
 ndj trs joins stabilizables =
     let sides = S.toList $ S.fromList [x | (l, r) <- R.toList trs, x <- [l, r]]
-        ndj0 = R.fromList [(s, s') | s <- sides, s' <- sides,
+        ndj0 = R.fromList [(s, s') | l@(s:_) <- tails sides, s' <- l,
             not $ djconds trs joins stabilizables s s']
         add new old | R.null new = old
         add new old =

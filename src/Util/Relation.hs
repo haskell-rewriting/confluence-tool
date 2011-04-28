@@ -29,7 +29,7 @@ insert :: Ord a => (a, a) -> Rel a -> Rel a
 insert (a, b) rel = Rel{ suc = insert' a b (suc rel),
                          pre = insert' b a (pre rel) }
   where
-    insert' a b = M.alter (Just . maybe (S.singleton a) (S.insert b)) a
+    insert' a b = M.alter (Just . maybe (S.singleton b) (S.insert b)) a
 
 empty :: Rel a
 empty = Rel{ suc = M.empty, pre = M.empty }

@@ -1,14 +1,18 @@
+-- This file is covered by an MIT license. See 'LICENSE' for details.
+-- Author: Bertram Felgenhauer
+
 -- Knuth-Bendix criterion
 {-# LANGUAGE OverloadedStrings #-}
 module Confluence.Direct.KnuthBendix (
     confluent
 ) where
 
-import Text.PrettyPrint.ANSI.Leijen
+import Text.PrettyPrint.ANSI.Leijen hiding (group)
 import qualified Data.Rewriting.Rules as R
-import Data.Rewriting.Rule
-import Data.Rewriting.Term (Term (..))
+import Data.Rewriting.Rule hiding (vars)
+import Data.Rewriting.Term (Term (..), vars)
 import Data.Rewriting.CriticalPair as C
+import Data.List
 
 import Confluence.Types
 import Termination.TTT2
@@ -40,7 +44,8 @@ checkCPs trs (c:cs) = do
             tell "Normal forms are equal."
             checkCPs trs cs
           else do
-            tell "Normal forms are different."
+            tell $ "Normal forms are different." <+> hsep (map ppretty (map head . group . sort $ vars (C.top c)))
+            checkCPs trs cs
             return No
     maybe (tell "Could not find normal form." >> return Maybe) cont (l >> r)
 

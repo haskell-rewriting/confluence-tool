@@ -1,5 +1,6 @@
 Name:          tool
 Version:       0.0
+Synopsis:      A minimal confluence tool.
 Stability:     experimental
 Author:        Bertram Felgenhauer
 
@@ -13,7 +14,7 @@ Executable tool
     Main-is:        Main.hs
 
     Build-Depends:
-        process >= 1.0 && < 1.1,
+        process >= 1.0 && < 1.2,
         array >= 0.3 && < 0.4,
         containers >= 0.3 && < 0.5,
         mtl >= 1.1 && < 2.1,

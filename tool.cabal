@@ -15,9 +15,9 @@ Executable tool
 
     Build-Depends:
         process >= 1.0 && < 1.2,
-        array >= 0.3 && < 0.4,
-        containers >= 0.3 && < 0.5,
-        mtl >= 1.1 && < 2.1,
+        array >= 0.3 && < 0.5,
+        containers >= 0.3 && < 0.6,
+        mtl >= 1.1 && < 2.2,
         ansi-wl-pprint >= 0.6 && < 0.7,
         term-rewriting >= 0.0 && < 0.1,
         base >= 4 && < 5

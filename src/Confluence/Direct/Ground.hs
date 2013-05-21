@@ -17,7 +17,7 @@ import qualified Data.Rewriting.Rule as Rule
 import qualified Data.Rewriting.Term as Term
 
 import Text.PrettyPrint.ANSI.Leijen
-import Control.Monad.RWS
+import Control.Monad.RWS hiding ((<>))
 import Control.Monad
 import qualified Data.Set as S
 import qualified Data.Map as M

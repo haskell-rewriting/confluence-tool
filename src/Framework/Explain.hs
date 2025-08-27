@@ -43,6 +43,9 @@ instance MonadWriter Doc Explain where
     listen = Explain . fmap (\(a, b) -> (a, unMDoc b)) . listen . runExplain'
     pass = Explain . pass . fmap (\(a, f) -> (a, MDoc . f . unMDoc)) . runExplain'
 
+instance Semigroup MDoc where
+    (<>) = mappend
+
 instance Monoid MDoc where
     mempty = Empty
     mappend (MDoc a) (MDoc b) = MDoc (a P.<$> b)

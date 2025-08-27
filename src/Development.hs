@@ -6,7 +6,7 @@ module Development where
 import Data.Rewriting.Term (Term (..))
 import Data.Rewriting.Substitution.Type
 import Data.Rewriting.Substitution
-import Data.Rewriting.Rules
+import Data.Rewriting.Rules hiding (map)
 import Data.Rewriting.Rule (Rule (..))
 
 import qualified Data.Map as M

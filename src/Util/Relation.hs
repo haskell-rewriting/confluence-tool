@@ -57,7 +57,7 @@ difference rel rel' = Rel{ suc = difference' (suc rel) (suc rel'),
         (\a b -> let r = S.difference a b in guard (S.null r) >> return r)
 
 null :: Ord a => Rel a -> Bool
-null rel = M.fold (\a b -> S.null a && b) True (suc rel)
+null rel = M.foldr (\a b -> S.null a && b) True (suc rel)
 
 fromList :: Ord a => [(a, a)] -> Rel a
 fromList = foldl' (flip insert) empty

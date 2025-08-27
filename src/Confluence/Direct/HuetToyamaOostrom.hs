@@ -2,6 +2,7 @@
 -- Author: Bertram Felgenhauer
 
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Confluence.Direct.HuetToyamaOostrom (
     confluent
 ) where
@@ -9,7 +10,7 @@ module Confluence.Direct.HuetToyamaOostrom (
 import Text.PrettyPrint.ANSI.Leijen
 
 import Data.Rewriting.CriticalPair as C
-import Data.Rewriting.Rules
+import Data.Rewriting.Rules hiding (map)
 
 import Confluence.Types
 import Framework.Types

@@ -12,7 +12,7 @@ import Framework.Types
 import qualified Data.Rewriting.Problem as P
 import qualified Data.Rewriting.Rules as Rs
 import qualified Data.Rewriting.Rule as R
-import Text.PrettyPrint.ANSI.Leijen
+import Text.PrettyPrint.ANSI.Leijen as PP
 import qualified Data.Set as S
 
 import System.Process
@@ -42,7 +42,7 @@ ttt2 problem = do
 showTPDB :: Problem -> String
 showTPDB problem = show $
     let vars = S.toList $ S.fromList $ Rs.vars problem
-    in  "(VAR" <+> fillSep (map text vars) <> ")" <$>
-        "(RULES" <$>
-        indent 4 (vcat $ map (R.prettyRule "->" text text) problem) <$>
+    in  "(VAR" <+> fillSep (map text vars) <> ")" PP.<$>
+        "(RULES" PP.<$>
+        indent 4 (vcat $ map (R.prettyRule "->" text text) problem) PP.<$>
         ")"

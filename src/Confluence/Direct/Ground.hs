@@ -2,6 +2,7 @@
 -- Author: Bertram Felgenhauer
 
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Confluence.Direct.Ground (
     confluent
 ) where

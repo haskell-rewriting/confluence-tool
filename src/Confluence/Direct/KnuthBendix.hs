@@ -3,13 +3,14 @@
 
 -- Knuth-Bendix criterion
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Confluence.Direct.KnuthBendix (
     confluent
 ) where
 
 import Text.PrettyPrint.ANSI.Leijen hiding (group)
 import qualified Data.Rewriting.Rules as R
-import Data.Rewriting.Rule hiding (vars)
+import Data.Rewriting.Rule hiding (map, vars)
 import Data.Rewriting.Term (Term (..), vars)
 import Data.Rewriting.CriticalPair as C
 import Data.List

@@ -13,7 +13,7 @@ import Framework.Types
 
 import qualified Data.Rewriting.Problem as P
 
-import Text.PrettyPrint.ANSI.Leijen
+import Text.PrettyPrint.ANSI.Leijen as PP
 import System.Environment
 import Control.Monad
 
@@ -33,7 +33,7 @@ main = do
 next :: IO (Explain Answer) -> IO () -> IO ()
 next a b = do
     a' <- a
-    putDoc $ empty <$> explanation a'
+    putDoc $ empty PP.<$> explanation a'
     case result a' of
         Maybe -> b
         _ -> print $ result a'
